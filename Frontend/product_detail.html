@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} — PriceRadar{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+.price-hero {
+  background: linear-gradient(135deg, var(--bg-elevated) 0%, rgba(108,99,255,0.06) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.price-hero-img {
+  width: 90px;
+  height: 90px;
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  object-fit: cover;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  overflow: hidden;
+}
+.price-hero-info { flex: 1; }
+.price-hero-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.price-hero-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.price-hero-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.hero-stat { }
+.hero-stat-val {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.hero-stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+
+.comp-grid { display: flex; flex-direction: column; gap: 10px; }
+
+.competitor-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  transition: border-color 0.2s;
+}
+.competitor-row:hover { border-color: var(--border-light); }
+
+.comp-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.comp-info { flex: 1; min-width: 0; }
+.comp-info-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.comp-info-url { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px; }
+
+.comp-price-block { text-align: right; }
+.comp-price-val {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+}
+.comp-price-diff { font-size: 11px; font-weight: 600; }
+
+.comp-actions { display: flex; gap: 6px; margin-left: 8px; }
+
+.update-price-form {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  margin-top: 6px;
+}
+
+.update-price-form.open { display: flex; }
+
+.chart-wrapper {
+  position: relative;
+  height: 260px;
+}
+
+.add-competitor-form {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+.form-row .form-group { flex: 1; min-width: 140px; margin-bottom: 0; }
+
+.alert-banner {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div class="topbar-title">
+    {{ product.name }} <span>Product Analysis</span>
+  </div>
+  <div style="display:flex;gap:10px">
+    <form method="POST" action="/product/{{ product.id }}/simulate-scrape" style="display:inline">
+      <button type="submit" class="btn btn-success">
+        <i class="fas fa-sync-alt"></i> Simulate Scrape
+      </button>
+    </form>
+    <a href="/update/{{ product.id }}" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</a>
+    <a href="/" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+  </div>
+</div>
+
+<div class="page-body">
+
+  {% if product.alert_threshold %}
+  <div class="alert-banner">
+    <i class="fas fa-bell"></i>
+    Alert active: You'll be notified when any competitor drops to or below <strong>${{ "%.2f"|format(product.alert_threshold) }}</strong>
+  </div>
+  {% endif %}
+
+  <!-- Hero -->
+  <div class="price-hero">
+    <div class="price-hero-img">
+      {% if product.image_path %}
+      <img src="/static/{{ product.image_path }}" alt="{{ product.name }}" />
+      {% else %}📦{% endif %}
+    </div>
+    <div class="price-hero-info">
+      <div class="price-hero-name">{{ product.name }}</div>
+      <div class="price-hero-meta">
+        <span class="badge badge-purple">{{ product.category }}</span>
+        &nbsp;Tracked since {{ product.created_at.strftime('%b %d, %Y') }}
+      </div>
+      <div class="price-hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-val">${{ "%.2f"|format(product.our_price) }}</div>
+          <div class="hero-stat-label">Our Price</div>
+        </div>
+        {% if product.competitors %}
+        <div class="hero-stat">
+          {% set min_price = product.competitors | map(attribute='current_price') | min %}
+          {% set max_price = product.competitors | map(attribute='current_price') | max %}
+          <div class="hero-stat-val" style="color:{% if min_price < product.our_price %}var(--warn){% else %}var(--accent-2){% endif %}">
+            ${{ "%.2f"|format(min_price) }}
+          </div>
+          <div class="hero-stat-label">Lowest Competitor</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-val" style="color:var(--text-secondary)">{{ product.competitors|length }}</div>
+          <div class="hero-stat-label">Competitors Tracked</div>
+        </div>
+        {% if min_price < product.our_price %}
+        <div class="hero-stat">
+          <div class="hero-stat-val" style="color:var(--warn)">-${{ "%.2f"|format(product.our_price - min_price) }}</div>
+          <div class="hero-stat-label">Price Gap (vs lowest)</div>
+        </div>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+
+    <!-- Competitors -->
+    <div>
+      <div class="section-header">
+        <div class="card-title"><i class="fas fa-store" style="color:var(--accent);margin-right:8px"></i>Competitor Prices</div>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAddForm()">
+          <i class="fas fa-plus"></i> Add Competitor
+        </button>
+      </div>
+
+      <!-- Add competitor form (hidden by default) -->
+      <div class="add-competitor-form" id="add-comp-form" style="display:none;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:12px">
+          <i class="fas fa-plus-circle" style="color:var(--accent)"></i> Add Competitor Store
+        </div>
+        <form method="POST" action="/product/{{ product.id }}/competitor/add">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Competitor Name</label>
+              <input class="form-control" type="text" name="competitor_name" placeholder="Amazon, Flipkart..." required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Current Price ($)</label>
+              <input class="form-control" type="number" name="current_price" step="0.01" min="0" placeholder="0.00" required />
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:10px">
+            <label class="form-label">Product URL</label>
+            <input class="form-control" type="url" name="competitor_url" placeholder="https://..." required />
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i class="fas fa-plus"></i> Add Competitor
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="toggleAddForm()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      {% if product.competitors %}
+      <div class="comp-grid">
+        {% set colors = ['#6c63ff','#00d4aa','#f59e0b','#ff6b6b','#a78bfa','#34d399'] %}
+        {% for comp in product.competitors %}
+        {% set diff = product.our_price - comp.current_price %}
+        {% set color = colors[loop.index0 % colors|length] %}
+        <div>
+          <div class="competitor-row">
+            <div class="comp-dot" style="background:{{ color }};box-shadow:0 0 6px {{ color }}55"></div>
+            <div class="comp-info">
+              <div class="comp-info-name">{{ comp.competitor_name }}</div>
+              <div class="comp-info-url">{{ comp.competitor_url }}</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:2px">
+                Updated {{ comp.last_checked.strftime('%b %d, %H:%M') }}
+              </div>
+            </div>
+            <div class="comp-price-block">
+              <div class="comp-price-val" style="color:{% if comp.current_price < product.our_price %}var(--warn){% elif comp.current_price > product.our_price %}var(--accent-2){% else %}var(--gold){% endif %}">
+                ${{ "%.2f"|format(comp.current_price) }}
+              </div>
+              <div class="comp-price-diff" style="color:{% if diff > 0 %}var(--accent-2){% elif diff < 0 %}var(--warn){% else %}var(--gold){% endif %}">
+                {% if diff > 0 %}+${{ "%.2f"|format(diff) }} vs us{% elif diff < 0 %}-${{ "%.2f"|format(-diff) }} vs us{% else %}Same as us{% endif %}
+              </div>
+            </div>
+            <div class="comp-actions">
+              <button class="btn btn-secondary btn-sm btn-icon" onclick="toggleUpdateForm({{ comp.id }})" title="Update price">
+                <i class="fas fa-edit"></i>
+              </button>
+              <a href="/competitor/{{ comp.id }}/delete" class="btn btn-danger btn-sm btn-icon" title="Remove">
+                <i class="fas fa-times"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Inline update price form -->
+          <form class="update-price-form" id="update-form-{{ comp.id }}" method="POST" action="/competitor/{{ comp.id }}/update">
+            <div style="display:flex;gap:10px;align-items:center">
+              <input class="form-control" type="number" name="new_price" step="0.01" min="0"
+                value="{{ comp.current_price }}" placeholder="New price" required style="max-width:160px" />
+              <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-check"></i> Update</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleUpdateForm({{ comp.id }})">Cancel</button>
+            </div>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="card">
+        <div class="empty-state" style="padding:30px">
+          <div class="empty-icon" style="font-size:32px">🏪</div>
+          <div class="empty-title" style="font-size:16px">No competitors added</div>
+          <div class="empty-text">Add competitor stores to start comparing prices</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Price History Chart -->
+    <div>
+      <div class="card-title" style="margin-bottom:16px"><i class="fas fa-chart-line" style="color:var(--accent);margin-right:8px"></i>Price History</div>
+
+      {% if product.price_history %}
+      <div class="card" style="padding:20px">
+        <div class="chart-wrapper">
+          <canvas id="priceChart"></canvas>
+        </div>
+      </div>
+      {% else %}
+      <div class="card">
+        <div class="empty-state" style="padding:30px">
+          <div class="empty-icon" style="font-size:32px">📊</div>
+          <div class="empty-title" style="font-size:16px">No history yet</div>
+          <div class="empty-text">Price history will appear here as data is collected</div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Price History Table -->
+      {% if product.price_history %}
+      <div class="card" style="margin-top:16px;padding:0">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+          <div class="card-title">Recent Changes</div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Price</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in product.price_history[-10:] | reverse %}
+            <tr>
+              <td style="color:var(--text-primary);font-weight:500">{{ h.source }}</td>
+              <td style="color:var(--accent);font-family:var(--font-display);font-weight:600">${{ "%.2f"|format(h.price) }}</td>
+              <td style="color:var(--text-muted)">{{ h.recorded_at.strftime('%b %d, %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleAddForm() {
+  const f = document.getElementById('add-comp-form');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleUpdateForm(id) {
+  const f = document.getElementById('update-form-' + id);
+  f.classList.toggle('open');
+}
+
+// Chart
+const historyData = {{ history_json | safe }};
+const COLORS = ['#6c63ff','#00d4aa','#f59e0b','#ff6b6b','#a78bfa','#34d399','#60a5fa'];
+
+if (Object.keys(historyData).length > 0) {
+  const allDates = new Set();
+  Object.values(historyData).forEach(entries => entries.forEach(e => allDates.add(e.date)));
+  const labels = [...allDates];
+
+  const datasets = Object.entries(historyData).map(([source, entries], i) => {
+    const priceMap = {};
+    entries.forEach(e => priceMap[e.date] = e.price);
+    return {
+      label: source,
+      data: labels.map(d => priceMap[d] ?? null),
+      borderColor: COLORS[i % COLORS.length],
+      backgroundColor: COLORS[i % COLORS.length] + '20',
+      borderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      tension: 0.4,
+      fill: false,
+      spanGaps: true,
+    };
+  });
+
+  const ctx = document.getElementById('priceChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: {
+          labels: { color: '#9999bb', font: { family: 'Inter', size: 11 } }
+        },
+        tooltip: {
+          backgroundColor: '#16161f',
+          borderColor: '#2a2a3d',
+          borderWidth: 1,
+          titleColor: '#f0f0ff',
+          bodyColor: '#9999bb',
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#5a5a7a', font: { size: 11 } },
+          grid: { color: '#2a2a3d' }
+        },
+        y: {
+          ticks: {
+            color: '#5a5a7a',
+            font: { size: 11 },
+            callback: v => '$' + v.toFixed(2)
+          },
+          grid: { color: '#2a2a3d' }
+        }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Price Alerts — PriceRadar{% endblock %}
+
+{% block extra_head %}
+<style>
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.alert-item:last-child { border-bottom: none; }
+.alert-item:hover { background: rgba(108,99,255,0.04); }
+.alert-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  margin-top: 6px;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px var(--gold);
+}
+.alert-text { font-size: 14px; color: var(--text-primary); flex: 1; line-height: 1.5; }
+.alert-time { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.no-alerts {
+  text-align: center;
+  padding: 60px 24px;
+}
+.alert-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.alert-stat {
+  flex: 1;
+  min-width: 140px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  text-align: center;
+}
+.alert-stat-val {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.alert-stat-label { font-size: 12px; color: var(--text-muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div class="topbar-title">Price Alerts <span>{{ alerts|length }} total</span></div>
+  <a href="/" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Dashboard</a>
+</div>
+
+<div class="page-body">
+
+  <div class="alert-stats">
+    <div class="alert-stat">
+      <div class="alert-stat-val">{{ alerts|length }}</div>
+      <div class="alert-stat-label">Total Alerts</div>
+    </div>
+    <div class="alert-stat">
+      <div class="alert-stat-val" style="color:var(--accent-2)">
+        {{ alerts | selectattr('is_read') | list | length }}
+      </div>
+      <div class="alert-stat-label">Read</div>
+    </div>
+    <div class="alert-stat">
+      <div class="alert-stat-val" style="color:var(--gold)">
+        {{ alerts | rejectattr('is_read') | list | length }}
+      </div>
+      <div class="alert-stat-label">Unread</div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+      <div class="card-title"><i class="fas fa-bell" style="color:var(--gold);margin-right:8px"></i>All Price Alerts</div>
+    </div>
+
+    {% if alerts %}
+    {% for alert in alerts %}
+    <div class="alert-item">
+      <div class="alert-dot" style="background:{% if alert.is_read %}var(--text-muted){% else %}var(--gold){% endif %};box-shadow:{% if not alert.is_read %}0 0 6px var(--gold){% else %}none{% endif %}"></div>
+      <div style="flex:1">
+        <div class="alert-text">{{ alert.message }}</div>
+        <div class="alert-time">
+          <i class="fas fa-clock"></i> {{ alert.created_at.strftime('%B %d, %Y at %H:%M') }}
+          {% if alert.is_read %}
+          <span class="badge badge-gray" style="margin-left:8px">Read</span>
+          {% else %}
+          <span class="badge badge-gold" style="margin-left:8px">New</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="no-alerts">
+      <div style="font-size:48px;margin-bottom:16px">🔔</div>
+      <div style="font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No alerts yet</div>
+      <div style="font-size:14px;color:var(--text-secondary);margin-bottom:20px">
+        Set an alert threshold on your tracked products. When a competitor drops below it, you'll see the notification here.
+      </div>
+      <a href="/create" class="btn btn-primary"><i class="fas fa-plus"></i> Track a Product</a>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

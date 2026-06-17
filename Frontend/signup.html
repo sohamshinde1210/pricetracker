@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account — PriceRadar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg-base: #0a0a0f;
+      --bg-card: #16161f;
+      --bg-elevated: #1c1c28;
+      --border: #2a2a3d;
+      --accent: #6c63ff;
+      --accent-glow: rgba(108, 99, 255, 0.3);
+      --accent-soft: rgba(108, 99, 255, 0.12);
+      --accent-2: #00d4aa;
+      --text-primary: #f0f0ff;
+      --text-secondary: #9999bb;
+      --text-muted: #5a5a7a;
+      --warn: #ff6b6b;
+      --warn-soft: rgba(255, 107, 107, 0.12);
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .bg-orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.12; }
+    .orb-1 { width: 500px; height: 500px; background: var(--accent); top: -200px; right: -100px; animation: float1 14s ease-in-out infinite; }
+    .orb-2 { width: 350px; height: 350px; background: var(--accent-2); bottom: -100px; left: -80px; animation: float2 11s ease-in-out infinite; }
+    @keyframes float1 { 0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,25px)} }
+    @keyframes float2 { 0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-20px)} }
+    .auth-container { width: 100%; max-width: 440px; padding: 24px; position: relative; z-index: 1; }
+    .auth-brand { text-align: center; margin-bottom: 36px; }
+    .auth-brand-icon { width: 52px; height: 52px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 14px; box-shadow: 0 0 40px var(--accent-glow); }
+    .auth-brand-name { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; margin-bottom: 5px; }
+    .auth-brand-name span { color: var(--accent); }
+    .auth-brand-tagline { font-size: 13px; color: var(--text-secondary); }
+    .auth-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; box-shadow: 0 24px 80px rgba(0,0,0,0.5); }
+    .auth-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; }
+    .auth-subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 26px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 7px; }
+    .form-control { width: 100%; padding: 12px 14px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary); font-size: 14px; font-family: var(--font-body); transition: border-color .18s, box-shadow .18s; outline: none; }
+    .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .form-control::placeholder { color: var(--text-muted); }
+    .btn-submit { width: 100%; padding: 13px; background: var(--accent); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; font-family: var(--font-body); cursor: pointer; transition: all .18s ease; margin-top: 8px; box-shadow: 0 0 30px var(--accent-glow); }
+    .btn-submit:hover { background: #7c74ff; transform: translateY(-1px); box-shadow: 0 4px 40px var(--accent-glow); }
+    .auth-footer { text-align: center; margin-top: 22px; font-size: 13px; color: var(--text-muted); }
+    .auth-footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .auth-footer a:hover { text-decoration: underline; }
+    .error-msg { background: var(--warn-soft); border: 1px solid rgba(255,107,107,0.3); color: var(--warn); padding: 12px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 18px; }
+    .features { display: flex; gap: 8px; margin-top: 20px; }
+    .feature-pill { flex: 1; text-align: center; padding: 8px 6px; background: var(--bg-elevated); border-radius: 8px; border: 1px solid var(--border); font-size: 11px; color: var(--text-muted); }
+    .feature-pill span { display: block; font-size: 16px; margin-bottom: 2px; }
+  </style>
+</head>
+<body>
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <div class="auth-container">
+    <div class="auth-brand">
+      <div class="auth-brand-icon">📡</div>
+      <div class="auth-brand-name">Price<span>Radar</span></div>
+      <div class="auth-brand-tagline">Start tracking competitor prices for free</div>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-title">Create your account</div>
+      <div class="auth-subtitle">Join thousands of businesses making smarter pricing decisions</div>
+
+      {% if error %}
+      <div class="error-msg"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+      {% endif %}
+
+      <form method="POST" action="/signup">
+        <div class="form-group">
+          <label class="form-label" for="name">Full Name</label>
+          <input class="form-control" type="text" id="name" name="name" placeholder="Alex Johnson" required autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="email">Work Email</label>
+          <input class="form-control" type="email" id="email" name="email" placeholder="alex@company.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input class="form-control" type="password" id="password" name="password" placeholder="Min 8 characters" required autocomplete="new-password" minlength="6" />
+        </div>
+
+        <button type="submit" class="btn-submit">Create Free Account</button>
+      </form>
+
+      <div class="features">
+        <div class="feature-pill"><span>🔔</span>Price Alerts</div>
+        <div class="feature-pill"><span>📊</span>History Charts</div>
+        <div class="feature-pill"><span>🔒</span>JWT Secured</div>
+      </div>
+
+      <div class="auth-footer" style="margin-top:24px">
+        Already have an account? <a href="/login">Sign in</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

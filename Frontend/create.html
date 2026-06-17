@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Track New Product — PriceRadar{% endblock %}
+
+{% block extra_head %}
+<style>
+.form-card {
+  max-width: 680px;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-elevated);
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.dragging {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.drop-zone-icon { font-size: 32px; margin-bottom: 8px; }
+.drop-zone-text { font-size: 14px; color: var(--text-secondary); }
+.drop-zone-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.preview-img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-top: 12px;
+  display: none;
+}
+.tip-box {
+  background: var(--accent-soft);
+  border: 1px solid rgba(108,99,255,0.25);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.tip-box i { color: var(--accent); margin-top: 1px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div class="topbar-title">
+    Track New Product <span>Add to monitoring</span>
+  </div>
+  <a href="/" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Dashboard</a>
+</div>
+
+<div class="page-body">
+  <div class="form-card card">
+    <div class="card-header">
+      <div class="card-title"><i class="fas fa-plus-circle" style="color:var(--accent);margin-right:8px"></i>Product Details</div>
+    </div>
+
+    <form method="POST" action="/create" enctype="multipart/form-data">
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Product Name</label>
+          <input class="form-control" type="text" name="name" placeholder="e.g. Sony WH-1000XM5 Headphones" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-control" name="category" required>
+            <option value="" disabled selected>Select category</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Clothing & Fashion">Clothing & Fashion</option>
+            <option value="Home & Kitchen">Home & Kitchen</option>
+            <option value="Sports & Outdoors">Sports & Outdoors</option>
+            <option value="Books & Media">Books & Media</option>
+            <option value="Beauty & Health">Beauty & Health</option>
+            <option value="Toys & Games">Toys & Games</option>
+            <option value="Automotive">Automotive</option>
+            <option value="Software & SaaS">Software & SaaS</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Our Current Price ($)</label>
+          <input class="form-control" type="number" name="our_price" step="0.01" min="0" placeholder="0.00" required />
+        </div>
+
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Alert Threshold — Notify me when a competitor goes below ($)</label>
+          <input class="form-control" type="number" name="alert_threshold" step="0.01" min="0" placeholder="Leave blank to disable alerts" />
+          <div style="font-size:12px;color:var(--text-muted);margin-top:6px">
+            <i class="fas fa-info-circle"></i> You'll get an alert when any competitor's price drops to or below this value
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Product Image (optional)</label>
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" name="image" accept="image/*" id="img-input" onchange="previewImg(this)" />
+          <div class="drop-zone-icon">🖼️</div>
+          <div class="drop-zone-text">Drop an image or click to browse</div>
+          <div class="drop-zone-sub">PNG, JPG, WEBP — max 5MB</div>
+        </div>
+        <img id="preview" class="preview-img" alt="preview" />
+      </div>
+
+      <div class="tip-box" style="margin-bottom:20px">
+        <i class="fas fa-lightbulb"></i>
+        <div>After creating the product, go to its detail page to add competitor stores and their prices. You can then simulate a price scrape to see how PriceRadar tracks changes over time.</div>
+      </div>
+
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center">
+          <i class="fas fa-satellite-dish"></i> Start Tracking
+        </button>
+        <a href="/" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function previewImg(input) {
+  const preview = document.getElementById('preview');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragging'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragging'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('dragging');
+  const input = document.getElementById('img-input');
+  input.files = e.dataTransfer.files;
+  previewImg(input);
+});
+</script>
+{% endblock %}

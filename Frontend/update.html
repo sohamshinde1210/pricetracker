@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ product.name }} — PriceRadar{% endblock %}
+
+{% block extra_head %}
+<style>
+.form-card { max-width: 680px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-elevated);
+  position: relative;
+}
+.drop-zone:hover { border-color: var(--accent); background: var(--accent-soft); }
+.drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.drop-zone-text { font-size: 14px; color: var(--text-secondary); }
+.preview-img { width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-top: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div class="topbar-title">Edit Product <span>{{ product.name }}</span></div>
+  <a href="/product/{{ product.id }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="page-body">
+  <div class="form-card card">
+    <div class="card-header">
+      <div class="card-title"><i class="fas fa-edit" style="color:var(--accent);margin-right:8px"></i>Edit Product Details</div>
+    </div>
+
+    <form method="POST" action="/update/{{ product.id }}" enctype="multipart/form-data">
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Product Name</label>
+          <input class="form-control" type="text" name="name" value="{{ product.name }}" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-control" name="category" required>
+            {% for cat in ['Electronics','Clothing & Fashion','Home & Kitchen','Sports & Outdoors','Books & Media','Beauty & Health','Toys & Games','Automotive','Software & SaaS','Other'] %}
+            <option value="{{ cat }}" {% if product.category == cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Our Current Price ($)</label>
+          <input class="form-control" type="number" name="our_price" step="0.01" min="0" value="{{ product.our_price }}" required />
+        </div>
+
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Alert Threshold ($)</label>
+          <input class="form-control" type="number" name="alert_threshold" step="0.01" min="0"
+            value="{{ product.alert_threshold if product.alert_threshold else '' }}"
+            placeholder="Leave blank to disable alerts" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Product Image</label>
+        {% if product.image_path %}
+        <img src="/static/{{ product.image_path }}" class="preview-img" id="preview" style="display:block" alt="{{ product.name }}" />
+        {% else %}
+        <img id="preview" class="preview-img" alt="preview" style="display:none" />
+        {% endif %}
+        <div class="drop-zone" style="margin-top:10px">
+          <input type="file" name="image" accept="image/*" id="img-input" onchange="previewImg(this)" />
+          <div class="drop-zone-text">📷 Click or drop to replace image</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center">
+          <i class="fas fa-save"></i> Save Changes
+        </button>
+        <a href="/product/{{ product.id }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function previewImg(input) {
+  const preview = document.getElementById('preview');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+</script>
+{% endblock %}
