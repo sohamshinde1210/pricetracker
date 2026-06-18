@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from fastapi import FastAPI, Request, Form, Depends, Response, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
