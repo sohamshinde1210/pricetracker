@@ -11,7 +11,7 @@ import os
 import shutil
 import httpx
 from bs4 import BeautifulSoup
-from typing import Optional, List
+from typing import Optional,List
 import json
 import random
 
